@@ -1,22 +1,34 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { getToken } from '../utils/token'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    redirect: '/login'
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login/index.vue')
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register/index.vue')
+  },
+  {
+    path: '/layout',
+    redirect: '/layout/dashboard',
+    component: () => import('@/views/Dashboard/index.vue'),
+    children: [
+      {
+        path: 'dashboard',
+        component: () => import('@/views/Dashboard/index.vue')
+      }
+    ]
   }
 ]
 
@@ -24,6 +36,20 @@ const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
   routes
+})
+
+// 路由前置全局守卫（在路由发生真正跳转之前，会执行该函数）
+router.beforeEach((to, from, next) => {
+  // 如果用户访问登录页面直接放行
+  if (to.path === '/login') return next()
+  if (to.path === '/register') return next()
+  // 如果没有token，强制跳转到登录页面
+  if (!getToken()) {
+    return next('/login')
+  } else {
+    // 有token放行
+    next()
+  }
 })
 
 export default router
