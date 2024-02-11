@@ -1,6 +1,6 @@
 <template>
   <div class="register-container">
-    <el-form ref="registerFormRef" :model="registerForm" :rules="rules" class="register-page" :class="{ 'register-page-other': registerType === '1' }">
+    <el-form ref="registerFormRef" :model="registerForm" :rules="rules" class="register-page">
       <h2 class="title">注册</h2>
       <el-form-item label="用户名" prop="username">
         <el-input
@@ -23,19 +23,6 @@
         <el-input
           v-model="registerForm.confirm"
           placeholder="请输入确认密码"
-          prefix-icon="el-icon-lock"
-          clearable
-          show-password
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="注册类别">
-        <el-radio v-model="registerType" label="2">读者</el-radio>
-        <el-radio v-model="registerType" label="1">管理员</el-radio>
-      </el-form-item>
-      <el-form-item label="管理员注册码" prop="authorize" v-if="registerType === '1'">
-        <el-input
-          v-model="registerForm.authorize"
-          placeholder="请输入管理员注册码"
           prefix-icon="el-icon-lock"
           clearable
           show-password
@@ -72,7 +59,6 @@
 <script>
 import VerifyCode from '@/components/VerifyCode.vue'
 import { userRegisterAPI } from '@/api/index'
-import { startSakura } from '@/plugins/sakura'
 
 export default {
   name: 'Register',
@@ -82,12 +68,10 @@ export default {
   data () {
     return {
       randomCode: '',
-      registerType: '2',
       registerForm: {
         username: '',
         password: '',
         confirm: '',
-        authorize: '',
         validCode: ''
       },
       rules: {
@@ -109,13 +93,6 @@ export default {
           {
             required: true,
             message: '请输入确认密码',
-            trigger: 'blur'
-          }
-        ],
-        authorize: [
-          {
-            required: true,
-            message: '请输入管理员注册码',
             trigger: 'blur'
           }
         ],
@@ -194,31 +171,29 @@ export default {
           this.$message.warning('请检查两次输入的密码是否一致')
           return
         }
-        if (this.registerType === '1' && this.registerForm.authorize !== '1234') {
-          this.switchCode()
-          this.$message.warning('管理员注册码不正确')
-          return
-        }
         if (this.registerForm.validCode.toLowerCase() !== this.randomCode.toLowerCase()) {
           this.$message.warning('验证码错误')
           return
         }
         const req = {
+          id: Math.round(Math.random() * 9999) + 1,
           username: this.registerForm.username,
           password: this.registerForm.password,
-          confirm: this.registerForm.confirm,
-          role: this.registerType,
-          validCode: this.registerForm.validCode
+          name: null,
+          phone: null,
+          email: null,
+          address: null,
+          role: '用户'
         }
         const res = await userRegisterAPI(req)
-        if (res.code === '0') {
+        if (res.code === 200) {
           this.$message.success('注册成功，3s后将自动跳转登录页~')
           this.sleep(3000).then(() => {
             this.$router.push('/login')
           })
         } else {
           this.switchCode()
-          this.$message.error(`注册失败，${res.msg}`)
+          this.$message.error('注册失败，用户名重复')
         }
       })
     },
@@ -228,7 +203,6 @@ export default {
   },
   created () {
     this.switchCode()
-    startSakura()
   }
 }
 </script>
@@ -254,9 +228,6 @@ export default {
       margin-bottom: 20px;
       text-align: center;
     }
-  }
-  .register-page-other {
-    margin: 50px auto;
   }
 }
 .el-form-item {

@@ -27,8 +27,16 @@ const routes = [
       {
         path: 'dashboard',
         component: () => import('@/views/Dashboard/index.vue')
+      },
+      {
+        path: 'user',
+        component: () => import('@/views/User/index.vue')
       }
     ]
+  },
+  {
+    path: '*',
+    component: () => import('@/views/NotFound/index.vue')
   }
 ]
 

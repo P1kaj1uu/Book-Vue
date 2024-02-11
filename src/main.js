@@ -6,6 +6,7 @@ import md5 from 'js-md5'
 import VueI18n from 'vue-i18n'
 import Zh from '@/lang/zh'
 import En from '@/lang/en'
+import './assets/css/global.css'
 import './plugins/element'
 import 'element-ui/lib/theme-chalk/index.css'
 

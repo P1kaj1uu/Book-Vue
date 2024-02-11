@@ -1,5 +1,7 @@
 // 基于axios封装的请求模块
 import theAxios from 'axios'
+import Router from '@/router/index'
+import { Message } from 'element-ui'
 // 导入封装的token方法
 import { getToken } from './token'
 // 导入进度条效果
@@ -21,8 +23,8 @@ axios.interceptors.request.use(function (config) {
   NProgress.start()
   const token = getToken()
   if (token) {
-    // 为请求头添加token验证Authorization字段
-    config.headers.Authorization = `Bearer ${token}`
+    // 为请求头添加token验证字段
+    config.headers['X-Token'] = token
   }
   return config
 }, function (error) {
@@ -35,6 +37,11 @@ axios.interceptors.response.use(function (response) {
   // 对响应数据做点什么
   let res = response.data
   NProgress.done()
+  // 如果token过期
+  if (res.code === 401) {
+    Message.warning(res.msg)
+    Router.push('/login')
+  }
   // 如果是返回的文件
   if (response.config.responseType === 'blob') {
     return res

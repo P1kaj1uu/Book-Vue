@@ -52,7 +52,7 @@
 import VerifyCode from '@/components/VerifyCode.vue'
 import { userLoginAPI } from '@/api/index'
 import { setToken } from '@/utils/token'
-import { startSakura } from '@/plugins/sakura'
+import { mapMutations } from 'vuex'
 
 export default {
   name: 'Login',
@@ -93,6 +93,7 @@ export default {
     }
   },
   methods: {
+    ...mapMutations('User', ['setUserInfo']),
     // 随机生成验证码
     switchCode () {
       const str = [
@@ -157,11 +158,12 @@ export default {
         }
         // 发起网络请求
         const res = await userLoginAPI(this.loginForm)
-        if (!res.data) {
+        if (res.code !== 200) {
           this.$message.error(res.msg)
           this.switchCode()
         } else {
           setToken(res.data.token)
+          this.setUserInfo(res.data)
           this.$router.push('/layout')
           this.$message.success('登录成功')
         }
@@ -173,7 +175,6 @@ export default {
   },
   created () {
     this.switchCode()
-    startSakura()
   }
 }
 </script>
