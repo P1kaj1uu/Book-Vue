@@ -29,8 +29,24 @@ const routes = [
         component: () => import('@/views/Dashboard/index.vue')
       },
       {
+        path: 'record',
+        component: () => import('@/views/Record/index.vue')
+      },
+      {
         path: 'user',
         component: () => import('@/views/User/index.vue')
+      },
+      {
+        path: 'comment',
+        component: () => import('@/views/Comment/index.vue')
+      },
+      {
+        path: 'message',
+        component: () => import('@/views/Message/index.vue')
+      },
+      {
+        path: 'me',
+        component: () => import('@/views/Me/index.vue')
       }
     ]
   },

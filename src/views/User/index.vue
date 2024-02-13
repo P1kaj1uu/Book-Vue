@@ -2,48 +2,208 @@
   <div class="user-container">
     <BreadCrumb :currentBreadName="currentBreadName" />
 
-    <el-card class="box-card" v-if="isViewInfo">
-      <div class="title">当前{{ this.userInfo.role }}信息</div>
-      <div class="username">用户名：{{ this.userInfo.username }}</div>
-      <div class="name">名称：{{ this.userInfo.name }}</div>
-      <div class="phone">电话：{{ this.userInfo.phone }}</div>
-      <div class="email">邮箱：{{ this.userInfo.email }}</div>
-      <div class="address">地址：{{ this.userInfo.address }}</div>
-      <div class="role">角色：{{ this.userInfo.role }}</div>
-      <el-button class="edit" type="primary" @click="edit">修改个人信息</el-button>
-    </el-card>
-    <el-card class="box-card" v-else>
-      <div class="title">编辑{{ this.userInfo.role }}信息</div>
-      <div class="username">用户名：{{ this.userInfo.username }}</div>
-      <div class="name wrap">
-        <div>名称：</div>
+    <div class="query-box">
+      <div class="username">
+        <div class="desc">用户名：</div>
+        <el-input v-model="username" placeholder="请输入用户名"></el-input>
+      </div>
+      <div class="name">
+        <div class="desc">名称：</div>
         <el-input v-model="name" placeholder="请输入名称"></el-input>
       </div>
-      <div class="phone wrap">
-        <div>电话：</div>
-        <el-input v-model="phone" placeholder="请输入电话"></el-input>
+      <div class="role">
+        <div class="desc">角色：</div>
+        <el-select v-model="role" placeholder="请选择角色">
+          <el-option
+            v-for="item in options"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          >
+          </el-option>
+        </el-select>
       </div>
-      <div class="email wrap">
-        <div>邮箱：</div>
-        <el-input v-model="email" placeholder="请输入邮箱"></el-input>
+      <el-button type="primary" class="distance" @click="queryUser"
+        >查询</el-button
+      >
+      <el-button @click="clearContent">重置</el-button>
+      <el-button type="primary" class="distance" @click="addUser" v-if="this.userInfo.role === '管理员'"
+        >新增用户/管理员</el-button
+      >
+    </div>
+
+    <el-table
+      :data="userList"
+      border
+      height="450"
+      style="width: 100%; margin: 20px auto"
+    >
+      <el-table-column label="用户名">
+        <template slot-scope="scope">
+          <p>{{ scope.row.username }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column label="名称">
+        <template slot-scope="scope">
+          <p>{{ scope.row.name }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column label="手机号" width="130">
+        <template slot-scope="scope">
+          <p>{{ scope.row.phone }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column label="邮箱" width="170">
+        <template slot-scope="scope">
+          <p>{{ scope.row.email }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column label="地址">
+        <template slot-scope="scope">
+          <p>{{ scope.row.address }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column label="角色" width="80">
+        <template slot-scope="scope">
+          <p>{{ scope.row.role }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" v-if="this.userInfo.role === '管理员'">
+        <template slot-scope="scope">
+          <el-button size="mini" @click="handlePassword(scope.row)"
+            >修改密码</el-button
+          >
+          <el-button
+            size="mini"
+            type="danger"
+            v-if="userInfo.username !== scope.row.username"
+            @click="handleDelete(scope.row)"
+            >删除</el-button
+          >
+        </template>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="currentPage"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="10"
+      layout="total, sizes, prev, pager, next"
+      :total="total"
+    >
+    </el-pagination>
+
+    <el-dialog title="修改密码" :visible.sync="passwordDialog" :show-close="false">
+      <el-form :model="passwordForm" :rules="passwordFormRules" ref="passwordFormRef">
+        <el-form-item
+          label="新密码"
+          label-width="80"
+          prop="newPassword"
+        >
+          <el-input
+            v-model="passwordForm.newPassword"
+            type="password"
+            placeholder="请输入新密码"
+            autocomplete="off"
+            clearable
+            show-password
+          ></el-input>
+        </el-form-item>
+        <el-form-item
+          label="确认密码"
+          label-width="80"
+          prop="againPassword"
+        >
+          <el-input
+            v-model="passwordForm.againPassword"
+            type="password"
+            placeholder="请输入确认密码"
+            autocomplete="off"
+            clearable
+            show-password
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelPassword">取 消</el-button>
+        <el-button type="primary" @click="confirmPassword"
+          >确 定</el-button
+        >
       </div>
-      <div class="address wrap">
-        <div>地址：</div>
-        <el-input v-model="address" placeholder="请输入地址"></el-input>
+    </el-dialog>
+
+    <el-dialog title="新增用户/管理员" :visible.sync="userDialog" :show-close="false">
+      <el-form :model="userForm" :rules="userFormRules" ref="userFormRef">
+        <el-form-item label="用户名" prop="username">
+          <el-input
+            v-model="userForm.username"
+            placeholder="请输入用户名"
+            prefix-icon="el-icon-user"
+            clearable
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="角色" prop="role">
+          <el-select v-model="userForm.role" placeholder="请选择角色">
+            <el-option
+              v-for="item in options"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          label="新密码"
+          label-width="80"
+          prop="newPassword"
+        >
+          <el-input
+            v-model="userForm.newPassword"
+            type="password"
+            placeholder="请输入新密码"
+            autocomplete="off"
+            clearable
+            show-password
+          ></el-input>
+        </el-form-item>
+        <el-form-item
+          label="确认密码"
+          label-width="80"
+          prop="againPassword"
+        >
+          <el-input
+            v-model="userForm.againPassword"
+            type="password"
+            placeholder="请输入确认密码"
+            autocomplete="off"
+            clearable
+            show-password
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelAdd">取 消</el-button>
+        <el-button type="primary" @click="confirmAdd"
+          >确 定</el-button
+        >
       </div>
-      <div class="role">角色：{{ this.userInfo.role }}</div>
-      <div class="edit">
-        <el-button type="primary" @click="changeInfo">确认修改</el-button>
-        <el-button @click="() => this.isViewInfo = true">取消修改</el-button>
-      </div>
-    </el-card>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import BreadCrumb from "@/components/BreadCrumb.vue";
-import { editUserInfoAPI } from "@/api/index";
+import {
+  userListAPI,
+  userByConditionAPI,
+  deleteUserAPI,
+  userPasswordAPI,
+  userRegisterAPI,
+} from "@/api/user";
 import { mapState, mapMutations } from "vuex";
+import { removeToken } from "@/utils/token";
 
 export default {
   name: "User",
@@ -55,108 +215,256 @@ export default {
   },
   data() {
     return {
-      currentBreadName: "个人",
-      isViewInfo: true,
+      currentBreadName: "用户",
+      userList: [],
+      currentPage: 1,
+      pageNum: 1,
+      pageSize: 10,
+      total: 0,
+      username: "",
       name: "",
-      phone: "",
-      email: "",
-      address: ""
+      role: "",
+      options: [
+        {
+          value: "用户",
+          label: "用户",
+        },
+        {
+          value: "管理员",
+          label: "管理员",
+        },
+      ],
+      userId: 0,
+      passwordDialog: false,
+      passwordForm: {
+        newPassword: "",
+        againPassword: "",
+      },
+      passwordFormRules: {
+        newPassword: [
+          {
+            required: true,
+            message: "请输入新密码",
+            trigger: "blur",
+          },
+        ],
+        againPassword: [
+          {
+            required: true,
+            message: "请输入确认密码",
+            trigger: "blur",
+          },
+        ],
+      },
+      userDialog: false,
+      userForm: {
+        username: "",
+        role: "",
+        newPassword: "",
+        againPassword: "",
+      },
+      userFormRules: {
+        username: [
+          {
+            required: true,
+            message: "请输入用户名",
+            trigger: "blur",
+          },
+        ],
+        role: [
+          {
+            required: true,
+            message: "请选择角色",
+            trigger: "blur",
+          },
+        ],
+        newPassword: [
+          {
+            required: true,
+            message: "请输入新密码",
+            trigger: "blur",
+          },
+        ],
+        againPassword: [
+          {
+            required: true,
+            message: "请输入确认密码",
+            trigger: "blur",
+          },
+        ],
+      },
     };
   },
   methods: {
-    ...mapMutations('User', ['setUserInfo']),
-    edit() {
-      this.isViewInfo = false;
-      this.name = this.userInfo.name;
-      this.phone = this.userInfo.phone;
-      this.email = this.userInfo.email;
-      this.address = this.userInfo.address;
+    ...mapMutations("User", ["setUserInfo"]),
+    async getUserList() {
+      const req = {
+        pageNum: this.pageNum,
+        pageSize: this.pageSize,
+      };
+      const res = await userListAPI(req);
+      this.userList = res.data.list;
+      this.total = res.data.total;
     },
-    async changeInfo() {
-      const phoneRegx = /^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\d{8}$/;
-      const emailRegx = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/;
-      if (this.phone && !phoneRegx.test(this.phone)) {
-        this.$message.warning('手机号格式不正确');
-        return;
-      }
-      if (this.email && !emailRegx.test(this.email)) {
-        this.$message.warning('邮箱格式不正确');
-        return;
-      }
-      let flag = (this.userInfo.name !== this.name) || (this.userInfo.phone !== this.phone) || (this.userInfo.email !== this.email) || (this.userInfo.address !== this.address);
-      if (flag) {
+    addUser() {
+      this.userDialog = true;
+    },
+    cancelAdd() {
+      this.$refs.userFormRef.resetFields();
+      this.userDialog = false;
+    },
+    confirmAdd() {
+      this.$refs.userFormRef.validate(async (valid) => {
+        if (!valid) {
+          this.$message.warning('请先输入必填项内容');
+          return;
+        }
+        if (this.userForm.newPassword !== this.userForm.againPassword) {
+          this.$message.warning('请检查两次输入的密码是否一致');
+          return;
+        }
         const req = {
-          id: this.userInfo.id,
-          name: this.name,
-          phone: this.phone,
-          email: this.email,
-          address: this.address
-        }
-        const info = {
-          id: this.userInfo.id,
-          username: this.userInfo.username,
-          password: this.userInfo.password,
-          name: this.name || this.userInfo.name,
-          phone: this.phone || this.userInfo.phone,
-          email: this.email || this.userInfo.email,
-          address: this.address || this.userInfo.address,
-          role: this.userInfo.role,
-          token: this.userInfo.token
-        }
-        const res = await editUserInfoAPI(req);
+          id: Math.round(Math.random() * 9999) + 1,
+          username: this.userForm.username,
+          password: this.userForm.password,
+          name: null,
+          phone: null,
+          email: null,
+          address: null,
+          role: this.userForm.role,
+        };
+        const res = await userRegisterAPI(req);
         if (res.code === 200) {
-          this.setUserInfo(info);
-          this.$message.success('编辑用户信息成功');
+          this.$message.success(`新增${this.userForm.role}成功`);
+          this.cancelAdd();
+          this.getUserList();
         } else {
-          this.$message.error('编辑用户信息失败，请稍后重试');
+          this.$message.error(`新增${this.userForm.role}失败，请稍后重试`);
         }
+      })
+    },
+    handlePassword(row) {
+      this.userId = row.id;
+      this.passwordDialog = true;
+    },
+    cancelPassword() {
+      this.$refs.passwordFormRef.resetFields();
+      this.passwordDialog = false;
+    },
+    async confirmPassword() {
+      this.$refs.passwordFormRef.validate(async (valid) => {
+        if (!valid) {
+          this.$message.warning('请先输入必填项内容');
+          return;
+        }
+        if (this.passwordForm.newPassword !== this.passwordForm.againPassword) {
+          this.$message.warning('请检查两次输入的密码是否一致');
+          return;
+        }
+        const req = {
+          id: this.userId,
+          password: this.passwordForm.againPassword,
+        };
+        const res = await userPasswordAPI(req);
+        if (res.code === 200) {
+          this.$message.success("修改密码成功");
+          this.cancelPassword();
+          if (this.userId === this.userInfo.id) {
+            removeToken();
+            this.setUserInfo(null);
+            this.$router.push("/login");
+          }
+        } else {
+          this.$message.error("修改密码失败，请稍后重试");
+        }
+      })
+    },
+    handleDelete(row) {
+      this.$confirm(`此操作将永久删除该${row.role}, 是否继续?`, "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(async () => {
+          const req = {
+            userId: row.id,
+          };
+          const res = await deleteUserAPI(req);
+          if (res.code === 200) {
+            this.$message.success(`删除${row.role}成功`);
+            this.getUserList();
+          } else {
+            this.$message.error(res.msg);
+          }
+        })
+        .catch(() => {});
+    },
+    handleSizeChange(val) {
+      this.pageSize = val;
+      this.getUserList();
+    },
+    handleCurrentChange(val) {
+      this.pageNum = val;
+      this.getUserList();
+    },
+    async queryUser() {
+      if (!this.username && !this.name && !this.role) {
+        this.getUserList();
+        return;
       }
-      this.isViewInfo = true;
-    }
+      const req = {
+        username: this.username,
+        name: this.name,
+        role: this.role,
+        pageNum: this.pageNum,
+        pageSize: this.pageSize,
+      };
+      const res = await userByConditionAPI(req);
+      this.userList = res.data.list;
+      this.total = res.data.total;
+    },
+    clearContent() {
+      this.username = "";
+      this.name = "";
+      this.role = "";
+    },
+  },
+  created() {
+    this.getUserList();
   },
 };
 </script>
 
 <style lang="less" scoped>
 .user-container {
-  .box-card {
-    padding: 30px 100px;
-    .title {
-      margin-bottom: 20px;
-      font-weight: 600;
-      font-size: 22px;
-      text-align: center;
-    }
+  .query-box {
+    display: flex;
+    align-items: center;
     .username {
-      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      .desc {
+        width: 90px;
+      }
     }
     .name {
-      margin-bottom: 20px;
-    }
-    .phone {
-      margin-bottom: 20px;
-    }
-    .email {
-      margin-bottom: 20px;
-    }
-    .address {
-      margin-bottom: 20px;
+      margin-left: 25px;
+      display: flex;
+      align-items: center;
+      .desc {
+        width: 70px;
+      }
     }
     .role {
-      margin-bottom: 20px;
-    }
-    .edit {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: auto;
-    }
-    .wrap {
+      margin-left: 25px;
       display: flex;
       align-items: center;
-      .el-input {
-        flex: 1;
+      .desc {
+        width: 60px;
       }
+    }
+    .distance {
+      margin-left: 25px;
     }
   }
 }

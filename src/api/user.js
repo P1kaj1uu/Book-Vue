@@ -1,7 +1,3 @@
-// 统一封装接口方法
-// 每个方法负责请求一个url地址
-
-// 导入封装的axios
 import axios from '../utils/request'
 
 // 用户登录
@@ -39,4 +35,36 @@ export const editUserInfoAPI = (data) => axios({
   url: '/user/edit',
   method: 'POST',
   data: data
+})
+
+// 删除用户
+export const deleteUserAPI = ({ userId }) => axios({
+  url: '/user/delete',
+  method: 'DELETE',
+  params: {
+    userId
+  }
+})
+
+// 查询所有用户
+export const userListAPI = ({ pageNum, pageSize }) => axios({
+  url: '/user/list',
+  method: 'GET',
+  params: {
+    pageNum,
+    pageSize
+  }
+})
+
+// 模糊查询用户
+export const userByConditionAPI = ({ username, name, role, pageNum, pageSize }) => axios({
+  url: '/user/select',
+  method: 'GET',
+  params: {
+    username,
+    name,
+    role,
+    pageNum,
+    pageSize
+  }
 })

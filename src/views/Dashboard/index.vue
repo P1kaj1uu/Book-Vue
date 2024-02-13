@@ -58,7 +58,7 @@
             >
             <span slot="title" v-else>图书管理</span>
           </el-menu-item>
-          <el-menu-item :index="'/home/trans'">
+          <el-menu-item :index="'/layout/record'">
             <i class="el-icon-document"></i>
             <span slot="title" v-if="this.userInfo.role === '用户'"
               >借阅归还</span
@@ -66,27 +66,27 @@
             <span slot="title" v-else>借阅管理</span>
           </el-menu-item>
           <el-menu-item
-            :index="'/home/trans'"
+            :index="'/layout/user'"
             v-if="this.userInfo.role === '管理员'"
           >
             <i class="el-icon-s-custom"></i>
             <span slot="title">用户管理</span>
           </el-menu-item>
           <el-menu-item
-            :index="'/home/trans'"
+            :index="'/layout/comment'"
             v-if="this.userInfo.role === '管理员'"
           >
             <i class="el-icon-message"></i>
             <span slot="title">评论管理</span>
           </el-menu-item>
-          <el-menu-item :index="'/home/chatgpt'">
+          <el-menu-item :index="'/layout/message'">
             <i class="el-icon-s-promotion"></i>
             <span slot="title" v-if="this.userInfo.role === '用户'"
               >公告公示</span
             >
             <span slot="title" v-else>公告管理</span>
           </el-menu-item>
-          <el-menu-item :index="'/layout/user'">
+          <el-menu-item :index="'/layout/me'">
             <i class="el-icon-user"></i>
             <span slot="title">个人中心</span>
           </el-menu-item>
@@ -97,7 +97,7 @@
       </el-main>
     </el-container>
 
-    <el-dialog title="修改密码" :visible.sync="passwordDialog">
+    <el-dialog title="修改密码" :visible.sync="passwordDialog" :show-close="false">
       <el-form :model="form" :rules="rules" ref="passwordRef">
         <el-form-item
           label="旧密码"
@@ -155,7 +155,7 @@
 <script>
 import { mapState, mapMutations } from "vuex";
 import { removeToken } from "@/utils/token";
-import { userPasswordAPI } from "@/api/index";
+import { userPasswordAPI } from "@/api/user";
 
 export default {
   name: "Dashboard",

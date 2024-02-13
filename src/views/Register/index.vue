@@ -58,7 +58,7 @@
 
 <script>
 import VerifyCode from '@/components/VerifyCode.vue'
-import { userRegisterAPI } from '@/api/index'
+import { userRegisterAPI } from '@/api/user'
 
 export default {
   name: 'Register',
@@ -216,8 +216,11 @@ export default {
   background-size: cover;
   overflow: hidden;
   .register-page {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     border-radius: 5px;
-    margin: 80px auto;
     width: 350px;
     padding: 24px;
     background: #fff;
