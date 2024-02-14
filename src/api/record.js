@@ -41,6 +41,13 @@ export const addRecordAPI = (data) => axios({
   data: data
 })
 
+// 续借
+export const continueRecordAPI = (data) => axios({
+  url: `/record/continue`,
+  method: 'POST',
+  data: data
+})
+
 // 归还
 export const sendRecordAPI = (data) => axios({
   url: `/record/send`,

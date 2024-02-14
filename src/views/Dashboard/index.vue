@@ -51,7 +51,7 @@
             <i class="el-icon-s-home"></i>
             <span slot="title">{{ $t("home") }}</span>
           </el-menu-item>
-          <el-menu-item :index="'/home/video'">
+          <el-menu-item :index="'/layout/book'">
             <i class="el-icon-reading"></i>
             <span slot="title" v-if="this.userInfo.role === '用户'"
               >图书大厅</span

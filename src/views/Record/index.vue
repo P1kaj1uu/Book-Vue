@@ -12,7 +12,7 @@
         <el-input v-model="bookName" placeholder="请输入图书名"></el-input>
       </div>
       <div class="isSend">
-        <div class="desc">角色：</div>
+        <div class="desc">是否归还：</div>
         <el-select v-model="isSend" placeholder="请选择是否归还">
           <el-option
             v-for="item in options"
@@ -73,18 +73,18 @@
           <span style="margin-left: 10px">{{ scope.row.sendTime }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" v-if="this.userInfo.role === '管理员'">
+      <el-table-column label="操作">
         <template slot-scope="scope">
-          <el-button size="mini" type="primary" @click="handleDelete(scope.row)"
+          <el-button v-if="userInfo.role === '管理员'" size="mini" type="primary" @click="handleRemind(scope.row)"
             >提醒</el-button
           >
-          <el-button size="mini" type="primary" @click="handleDelete(scope.row)"
+          <el-button v-if="userInfo.role === '用户' && scope.row.isSend === 0" size="mini" type="primary" @click="handleLead(scope.row)"
             >续借</el-button
           >
-          <el-button size="mini" type="primary" @click="handleDelete(scope.row)"
+          <el-button v-if="userInfo.role === '用户' && scope.row.isSend === 0" size="mini" type="primary" @click="handleSend(scope.row)"
             >归还</el-button
           >
-          <el-button size="mini" type="danger" @click="handleDelete(scope.row)"
+          <el-button v-if="userInfo.role === '用户'" size="mini" type="danger" @click="handleDelete(scope.row)"
             >删除</el-button
           >
         </template>
@@ -110,6 +110,7 @@ import {
   recordByUserAPI,
   recordByOtherAPI,
   deleteRecordAPI,
+  continueRecordAPI,
   sendRecordAPI,
 } from "@/api/record";
 import { mapState } from "vuex";
@@ -133,8 +134,12 @@ export default {
       total: 0,
       username: "",
       bookName: "",
-      isSend: 0,
+      isSend: 2,
       options: [
+        {
+          value: 2,
+          label: "全部",
+        },
         {
           value: 0,
           label: "未归还",
@@ -142,7 +147,7 @@ export default {
         {
           value: 1,
           label: "已归还",
-        },
+        }
       ],
     };
   },
@@ -194,6 +199,38 @@ export default {
         })
         .catch(() => {});
     },
+    handleRemind(row) {
+      this.$message.success(`已提醒用户：${row.username}及时归还图书`);
+    },
+    async handleLead(row) {
+      let timestamp = new Date(row.leadTime).getTime() + 24 * 60 * 60 * 1000 * 3;
+      const req = {
+        id: row.id,
+        isSend: 0,
+        leadTime: filters.toTime(timestamp),
+      };
+      const res = await continueRecordAPI(req);
+      if (res.code === 200) {
+        this.$message.success("续借成功");
+        this.userInfo.role === '管理员' ? this.getRecordList() : this.getMyRecordList();
+      } else {
+        this.$message.error(res.msg);
+      }
+    },
+    async handleSend(row) {
+      const req = {
+        id: row.id,
+        isSend: 1,
+        sendTime: filters.toTime(new Date()),
+      };
+      const res = await sendRecordAPI(req);
+      if (res.code === 200) {
+        this.$message.success("归还成功");
+        this.userInfo.role === '管理员' ? this.getRecordList() : this.getMyRecordList();
+      } else {
+        this.$message.error(res.msg);
+      }
+    },
     handleSizeChange(val) {
       this.pageSize = val;
       this.userInfo.role === '管理员' ? this.getRecordList() : this.getMyRecordList();
@@ -203,8 +240,23 @@ export default {
       this.userInfo.role === '管理员' ? this.getRecordList() : this.getMyRecordList();
     },
     async queryComment() {
-      if (!this.username && !this.bookName) {
+      if (!this.username && !this.bookName && this.isSend === 2) {
         this.userInfo.role === '管理员' ? this.getRecordList() : this.getMyRecordList();
+        return;
+      }
+      if (this.username && this.bookName && this.isSend === 2) {
+        this.recordList = this.recordList.filter(item => item.username.includes(this.username) && item.bookName.includes(this.bookName));
+        this.total = this.recordList.length;
+        return;
+      }
+      if (this.username && !this.bookName && this.isSend === 2) {
+        this.recordList = this.recordList.filter(item => item.username.includes(this.username));
+        this.total = this.recordList.length;
+        return;
+      }
+      if (!this.username && this.bookName && this.isSend === 2) {
+        this.recordList = this.recordList.filter(item => item.bookName.includes(this.bookName));
+        this.total = this.recordList.length;
         return;
       }
       const req = {
@@ -216,12 +268,12 @@ export default {
       };
       const res = await recordByOtherAPI(req);
       this.recordList = this.isSend === 1 ? res.data.list : res.data.list.filter(item => item.isSend === 0);
-      this.total = res.data.total;
+      this.total = this.recordList.length;
     },
     clearContent() {
       this.username = "";
       this.bookName = "";
-      this.isSend = 0;
+      this.isSend = 2;
     },
   },
   created() {
@@ -255,7 +307,7 @@ export default {
       display: flex;
       align-items: center;
       .desc {
-        width: 50px;
+        width: 85px;
       }
     }
     .distance {

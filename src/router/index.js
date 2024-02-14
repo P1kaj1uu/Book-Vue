@@ -29,6 +29,10 @@ const routes = [
         component: () => import('@/views/Dashboard/index.vue')
       },
       {
+        path: 'book',
+        component: () => import('@/views/Book/index.vue')
+      },
+      {
         path: 'record',
         component: () => import('@/views/Record/index.vue')
       },

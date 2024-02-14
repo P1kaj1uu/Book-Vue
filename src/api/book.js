@@ -53,7 +53,7 @@ export const bookImgAPI = (data) => axios({
 
 // 删除图书
 export const deleteBookAPI = ({ bookId }) => axios({
-  url: `/book/uploadImg`,
+  url: `/book/delete`,
   method: 'DELETE',
   params: {
     bookId
