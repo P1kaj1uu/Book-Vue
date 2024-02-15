@@ -1,5 +1,5 @@
 <template>
-  <el-container class="home-container">
+  <el-container class="dashboard-container">
     <el-header>
       <h2 class="welcome">
         {{
@@ -12,7 +12,6 @@
               }访问图书管理平台~`
         }}
       </h2>
-      <div class="time">{{ currentTime }}</div>
       <div class="my">
         <div class="avatar" @click="toggleShowMyList">
           {{
@@ -47,9 +46,9 @@
           active-text-color="#409eff"
           router
         >
-          <el-menu-item :index="'/layout/dashboard'">
+          <el-menu-item :index="'/layout/home'">
             <i class="el-icon-s-home"></i>
-            <span slot="title">{{ $t("home") }}</span>
+            <span slot="title">首页</span>
           </el-menu-item>
           <el-menu-item :index="'/layout/book'">
             <i class="el-icon-reading"></i>
@@ -57,6 +56,13 @@
               >图书大厅</span
             >
             <span slot="title" v-else>图书管理</span>
+          </el-menu-item>
+          <el-menu-item
+            :index="'/layout/type'"
+            v-if="this.userInfo.role === '管理员'"
+          >
+            <i class="el-icon-collection"></i>
+            <span slot="title">类别管理</span>
           </el-menu-item>
           <el-menu-item :index="'/layout/record'">
             <i class="el-icon-document"></i>
@@ -161,15 +167,13 @@ export default {
   name: "Dashboard",
   data() {
     return {
-      currentTime: "",
-      timer: null,
       isShowMyList: false,
       myList: [
-        {
+        /* {
           id: 1,
           name: "切换语言",
           other: "Language",
-        },
+        }, */
         {
           id: 2,
           name: "修改密码",
@@ -243,6 +247,7 @@ export default {
           break;
         case "退出登录":
           removeToken();
+          this.setCurrentMenu("/layout/home");
           this.setUserInfo(null);
           this.$router.push("/login");
           break;
@@ -292,20 +297,11 @@ export default {
       })
     },
   },
-  created() {
-    let that = this;
-    /* this.timer = setInterval(() => {
-      that.currentTime = new Date().toLocaleString();
-    }, 1000); */
-  },
-  beforeDestroy() {
-    this.timer && clearInterval(this.timer);
-  },
 };
 </script>
 
 <style lang="less" scoped>
-.home-container {
+.dashboard-container {
   height: 100%;
 
   .el-header {
@@ -316,10 +312,6 @@ export default {
     height: 80px !important;
 
     .welcome {
-      color: #fff;
-    }
-
-    .time {
       color: #fff;
     }
 

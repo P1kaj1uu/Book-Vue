@@ -1,5 +1,5 @@
 const state = {
-  currentMenu: '/layout/dashboard'
+  currentMenu: '/layout/home'
 }
 
 const mutations = {

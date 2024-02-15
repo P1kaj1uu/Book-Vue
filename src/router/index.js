@@ -21,16 +21,21 @@ const routes = [
   },
   {
     path: '/layout',
-    redirect: '/layout/dashboard',
+    name: 'layout',
+    redirect: '/layout/home',
     component: () => import('@/views/Dashboard/index.vue'),
     children: [
       {
-        path: 'dashboard',
-        component: () => import('@/views/Dashboard/index.vue')
+        path: 'home',
+        component: () => import('@/views/Home/index.vue')
       },
       {
         path: 'book',
         component: () => import('@/views/Book/index.vue')
+      },
+      {
+        path: 'type',
+        component: () => import('@/views/Type/index.vue')
       },
       {
         path: 'record',

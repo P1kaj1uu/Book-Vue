@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import md5 from 'js-md5'
+import * as echarts from 'echarts'
 import VueI18n from 'vue-i18n'
 import Zh from '@/lang/zh'
 import En from '@/lang/en'
@@ -18,7 +19,9 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 Vue.use(VueI18n)
+Vue.use(echarts)
 Vue.prototype.$md5 = md5
+Vue.prototype.$echarts = echarts
 
 Vue.config.productionTip = false
 

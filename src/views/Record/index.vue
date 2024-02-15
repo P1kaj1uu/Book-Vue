@@ -75,7 +75,7 @@
       </el-table-column>
       <el-table-column label="操作">
         <template slot-scope="scope">
-          <el-button v-if="userInfo.role === '管理员'" size="mini" type="primary" @click="handleRemind(scope.row)"
+          <el-button v-if="userInfo.role === '管理员' && scope.row.isSend === 0" size="mini" type="primary" @click="handleRemind(scope.row)"
             >提醒</el-button
           >
           <el-button v-if="userInfo.role === '用户' && scope.row.isSend === 0" size="mini" type="primary" @click="handleLead(scope.row)"
@@ -113,6 +113,10 @@ import {
   continueRecordAPI,
   sendRecordAPI,
 } from "@/api/record";
+import {
+  bookByNameAPI,
+  editBookNumAPI,
+} from "@/api/book";
 import { mapState } from "vuex";
 import filters from "@/utils/time";
 
@@ -128,6 +132,7 @@ export default {
     return {
       currentBreadName: "借阅归还",
       recordList: [],
+      bookList: [],
       currentPage: 1,
       pageNum: 1,
       pageSize: 10,
@@ -217,7 +222,26 @@ export default {
         this.$message.error(res.msg);
       }
     },
+    async queryBook(row) {
+      const req = {
+        name: row.bookName,
+        author: row.bookAuthor,
+        type: "",
+        pageNum: this.pageNum,
+        pageSize: this.pageSize,
+      };
+      const res = await bookByNameAPI(req);
+      this.bookList = res.data.list;
+    },
+    async changeNum() {
+      const req = {
+        id: this.bookList[0].id,
+        num: this.bookList[0].num + 1,
+      };
+      await editBookNumAPI(req);
+    },
     async handleSend(row) {
+      await this.queryBook(row);
       const req = {
         id: row.id,
         isSend: 1,
@@ -225,6 +249,7 @@ export default {
       };
       const res = await sendRecordAPI(req);
       if (res.code === 200) {
+        this.changeNum();
         this.$message.success("归还成功");
         this.userInfo.role === '管理员' ? this.getRecordList() : this.getMyRecordList();
       } else {

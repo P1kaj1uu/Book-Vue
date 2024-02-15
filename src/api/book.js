@@ -45,10 +45,13 @@ export const editBookNumAPI = (data) => axios({
 })
 
 // 图书图片上传
-export const bookImgAPI = (data) => axios({
-  url: `/book/uploadImg`,
+export const bookImgAPI = (bookId, data) => axios({
+  url: `/book/uploadImg?bookId=${bookId}`,
   method: 'POST',
-  data: data
+  headers: {
+    'Content-Type': 'multipart/form-data'
+  },
+  data: data,
 })
 
 // 删除图书

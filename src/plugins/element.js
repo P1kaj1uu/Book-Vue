@@ -42,6 +42,7 @@ import {
   Timeline,
   TimelineItem,
   DatePicker,
+  Calendar,
 } from 'element-ui'
 
 Vue.use(Button)
@@ -84,6 +85,7 @@ Vue.use(Radio)
 Vue.use(Timeline)
 Vue.use(TimelineItem)
 Vue.use(DatePicker)
+Vue.use(Calendar)
 
 Vue.prototype.$message = Message
 Vue.prototype.$confirm = MessageBox.confirm
