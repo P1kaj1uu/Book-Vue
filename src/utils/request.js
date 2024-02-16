@@ -19,7 +19,7 @@ const axios = theAxios.create({
 axios.interceptors.request.use(function (config) {
   // 在发送请求之前做些什么
   // 设置请求头
-  config.headers['Content-Type'] = 'application/json;charset=utf-8'
+  config.headers['Content-Type'] = config.url.includes('/book/uploadImg') ? 'multipart/form-data' : 'application/json;charset=utf-8'
   NProgress.start()
   const token = getToken()
   if (token) {

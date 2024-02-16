@@ -81,7 +81,7 @@
       <el-table-column label="操作">
         <template slot-scope="scope">
           <el-button v-if="userInfo.role === '用户'" size="mini" type="primary" @click="handleView(scope.row)"
-            >查看</el-button
+            >评论</el-button
           >
           <el-button v-if="userInfo.role === '用户'" size="mini" type="primary" @click="handleLead(scope.row)"
             >借阅</el-button
@@ -130,7 +130,7 @@
             placeholder="请输入图书简介"
           ></el-input>
         </el-form-item>
-        <el-form-item label="出版时间" label-width="120" prop="publishTime">
+        <el-form-item label="出版时间" label-width="120" prop="publishTime" v-if="dialogTitle === '新增图书'">
           <el-date-picker
             v-model="bookForm.publishTime"
             type="datetime"
@@ -166,6 +166,13 @@
         >
       </div>
     </el-dialog>
+
+    <el-dialog title="评论图书" :visible.sync="dialogBookCommentVisible">
+      <div v-if="!commentList.length">当前图书暂无评论，快去评论吧~</div>
+      <template v-else>
+        <div v-for="item in commentList" :key="item.id">{{ item.content }}</div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -187,9 +194,14 @@ import {
   addRecordAPI,
   recordByUserAPI,
 } from "@/api/record";
+import {
+  commentByBookAPI,
+  addCommentAPI,
+  editCommentAPI,
+  deleteCommentAPI,
+} from "@/api/comment";
 import { mapState } from "vuex";
 import filters from "@/utils/time";
-import axios from "axios";
 
 export default {
   name: "Book",
@@ -203,6 +215,8 @@ export default {
     return {
       currentBreadName: "图书",
       bookList: [],
+      currentBookId: 0,
+      currentBookNum: 0,
       currentPage: 1,
       pageNum: 1,
       pageSize: 10,
@@ -212,9 +226,11 @@ export default {
       type: "",
       typeList: [],
       recordList: [],
+      commentList: [],
       fileObj: null,
       dialogTitle: "",
       dialogBookVisible: false,
+      dialogBookCommentVisible: false,
       bookForm: {
         coverUrl: "",
         name: "",
@@ -305,52 +321,80 @@ export default {
       this.fileObj = file;
       this.bookForm.coverUrl = file.name;
     },
+    async sleep(t) {
+      return new Promise(resolve => setTimeout(resolve, t))
+    },
     changeBook() {
       this.$refs.bookFormRef.validate(async (valid) => {
         if (!valid) {
-          this.$message.warning('请先输入必填项内容')
+          this.$message.warning('请先输入必填项内容');
           return
         }
-        let formData = new FormData();
-        formData.append("picture", this.fileObj);
-        formData.append("coverUrl", this.bookForm.coverUrl);
-        const req = {
-          id: Math.round(Math.random() * 9999) + 1,
-          name: this.bookForm.name,
-          description: this.bookForm.desc,
-          author: this.bookForm.author,
-          publishTime: filters.toTime(this.bookForm.publishTime),
-          coverUrl: null,
-          type: this.bookForm.type,
-          typeId: this.typeList.filter(item => item.name === this.bookForm.type)[0].id,
-          num: Number(this.bookForm.num),
-        };
-        const res = await addBookAPI(req);
-        if (res.code === 200) {
-          /* axios({
-            url: `/api/book/uploadImg?bookId=${res.data.id}`,
-            method: 'POST',
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              'X-Token': this.userInfo.token,
-            },
-            data: formData,
-          }).then((result) => {
-            console.log('result', result)
-          }) */
-          await bookImgAPI(res.data.id, formData);
-          this.$message.success("新增图书成功");
+        if (this.dialogTitle === "新增图书") {
+          let formData = new FormData();
+          formData.append("file", this.fileObj);
+          const req = {
+            id: Math.round(Math.random() * 9999) + 1,
+            name: this.bookForm.name,
+            description: this.bookForm.desc,
+            author: this.bookForm.author,
+            publishTime: filters.toTime(this.bookForm.publishTime),
+            coverUrl: null,
+            type: this.bookForm.type,
+            typeId: this.typeList.filter(item => item.name === this.bookForm.type)[0].id,
+            num: Number(this.bookForm.num),
+          };
+          const res = await addBookAPI(req);
+          if (res.code === 200) {
+            await bookImgAPI(res.data.id, formData);
+            this.$message.success("新增图书成功");
+            this.sleep(1000).then(() => {
+              this.getBookList();
+              this.dialogBookVisible = false;
+            })
+          } else {
+            this.$message.error(res.msg);
+          }
         } else {
-          this.$message.error(res.msg);
+          if (this.currentBookNum > Number(this.bookForm.num)) {
+            this.$message.warning(`图书数量不允许比当前数量 ${this.currentBookNum} 少`);
+            return;
+          }
+          const editReq = {
+            id: this.currentBookId,
+            name: this.bookForm.name,
+            description: this.bookForm.desc,
+            author: this.bookForm.author,
+            coverUrl: null,
+            type: this.bookForm.type,
+            num: Number(this.bookForm.num),
+            typeId: this.typeList.filter(item => item.name === this.bookForm.type)[0].id,
+          };
+          const editRes = await editBookAPI(editReq);
+          if (editRes.code === 200) {
+            this.$message.success("编辑图书成功");
+            this.dialogBookVisible = false;
+            this.getBookList();
+          } else {
+            this.$message.error(editRes.msg);
+          }
         }
-        console.log('req',req)
       })
     },
     addBook() {
       this.dialogTitle = "新增图书";
       this.dialogBookVisible = true;
     },
-    handleView(row) {},
+    async handleView(row) {
+      const req = {
+        bookId: row.id,
+        pageNum: this.pageNum,
+        pageSize: 100,
+      };
+      const res = await commentByBookAPI(req);
+      this.commentList = res.data.list;
+      this.dialogBookCommentVisible = true;
+    },
     async changeNum(row) {
       const req = {
         id: row.id,
@@ -402,6 +446,8 @@ export default {
       }
     },
     handleEdit(row) {
+      this.currentBookId = row.id;
+      this.currentBookNum = row.num;
       this.bookForm.coverUrl = row.coverUrl;
       this.bookForm.name = row.name;
       this.bookForm.author = row.author;

@@ -292,8 +292,13 @@ export default {
         pageSize: this.pageSize,
       };
       const res = await recordByOtherAPI(req);
-      this.recordList = this.isSend === 1 ? res.data.list : res.data.list.filter(item => item.isSend === 0);
-      this.total = this.recordList.length;
+      if (this.userInfo.role === '管理员') {
+        this.recordList = this.isSend === 1 ? res.data.list : res.data.list.filter(item => item.isSend === 0);
+        this.total = this.recordList.length;
+      } else {
+        this.recordList = this.isSend === 0 ? res.data.list.filter(item => item.username.includes(this.userInfo.name || this.userInfo.username) && item.isSend === 0) : res.data.list.filter(item => item.username.includes(this.userInfo.name || this.userInfo.username));
+        this.total = this.recordList.length;
+      }
     },
     clearContent() {
       this.username = "";
