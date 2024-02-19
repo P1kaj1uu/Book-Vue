@@ -167,11 +167,33 @@
       </div>
     </el-dialog>
 
-    <el-dialog title="评论图书" :visible.sync="dialogBookCommentVisible">
-      <div v-if="!commentList.length">当前图书暂无评论，快去评论吧~</div>
-      <template v-else>
-        <div v-for="item in commentList" :key="item.id">{{ item.content }}</div>
-      </template>
+    <el-dialog title="评论图书" :visible.sync="dialogBookCommentVisible" custom-class="comment-box">
+      <div class="no-comment" v-if="!commentList.length">当前图书暂无评论，快去评论吧~</div>
+      <div class="comment-list" v-else>
+        <div class="comment-item" v-for="item in commentList" :key="item.id">
+          <div class="left">
+            <div class="avatar">{{ item.username.substring(0, 1) }}</div>
+            <div class="username">{{ item.username }}</div>
+            <div class="content">{{ item.content }}</div>
+          </div>
+          <div class="right">
+            <div class="text" @click="copyComment(item.content)">复制</div>
+            <div class="text" v-if="item.username === userInfo.username" @click="deleteComment(item.id)">删除</div>
+            <div class="time">{{ item.createTime }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="comment-input">
+        <el-input
+          type="textarea"
+          placeholder="让大家听到你的声音~"
+          v-model="commentValue"
+          maxlength="68"
+          show-word-limit
+        >
+        </el-input>
+        <el-button type="primary" size="mini" @click="addComment">发表</el-button>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -197,11 +219,11 @@ import {
 import {
   commentByBookAPI,
   addCommentAPI,
-  editCommentAPI,
   deleteCommentAPI,
 } from "@/api/comment";
 import { mapState } from "vuex";
 import filters from "@/utils/time";
+import { copyRichArticle } from "@/utils/copy";
 
 export default {
   name: "Book",
@@ -221,6 +243,7 @@ export default {
       pageNum: 1,
       pageSize: 10,
       total: 0,
+      commentValue: "",
       name: "",
       author: "",
       type: "",
@@ -386,6 +409,7 @@ export default {
       this.dialogBookVisible = true;
     },
     async handleView(row) {
+      this.currentBookId = row.id;
       const req = {
         bookId: row.id,
         pageNum: this.pageNum,
@@ -507,6 +531,62 @@ export default {
       this.author = "";
       this.type = "";
     },
+    async addComment() {
+      if (!this.commentValue.trim()) {
+        this.$message.warning("请输入您要评论的内容");
+        return;
+      }
+      const req = {
+        id: Math.round(Math.random() * 9999) + 1,
+        bookId: this.currentBookId,
+        username: this.userInfo.username,
+        content: this.commentValue,
+        createTime: filters.toTime(new Date()),
+      };
+      const res = await addCommentAPI(req);
+      if (res.code === 200) {
+        this.commentValue = "";
+        this.$message.success("评论成功，管理员将对评论内容进行审核");
+        const commentReq = {
+          bookId: this.currentBookId,
+          pageNum: this.pageNum,
+          pageSize: 100,
+        };
+        const commentRes = await commentByBookAPI(commentReq);
+        this.commentList = commentRes.data.list;
+      } else {
+        this.$message.error(res.msg);
+      }
+    },
+    deleteComment(id) {
+      this.$confirm("此操作将永久删除该评论, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(async () => {
+          const req = {
+            commentId: id,
+          };
+          const res = await deleteCommentAPI(req);
+          if (res.code === 200) {
+            this.$message.success("删除评论成功");
+            const commentReq = {
+              bookId: this.currentBookId,
+              pageNum: this.pageNum,
+              pageSize: 100,
+            };
+            const commentRes = await commentByBookAPI(commentReq);
+            this.commentList = commentRes.data.list;
+          } else {
+            this.$message.error(res.msg);
+          }
+        })
+        .catch(() => {});
+    },
+    copyComment(content) {
+      copyRichArticle(content, this);
+    },
   },
   created() {
     this.getTypeList();
@@ -546,6 +626,63 @@ export default {
     .distance {
       margin-left: 25px;
     }
+  }
+}
+.comment-box {
+  .no-comment {
+    color: red;
+    text-align: center;
+  }
+  .comment-list {
+    border: 1px solid #ccc;
+    height: 280px;
+    overflow: auto;
+    .comment-item {
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .left {
+        display: flex;
+        .avatar {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 30px;
+          height: 30px;
+          background-color: blue;
+          color: #fff;
+          border-radius: 50%;
+        }
+        .username {
+          margin-left: 8px;
+          font-size: 16px;
+          font-weight: 600;
+        }
+        .content {
+          margin-left: 12px;
+          width: 350px;
+          font-size: 14px;
+        }
+      }
+      .right {
+        display: flex;
+        align-items: center;
+        .text {
+          margin-left: 5px;
+          font-size: 12px;
+          color: blue;
+        }
+        .time {
+          margin-left: 5px;
+          font-size: 12px;
+        }
+      }
+    }
+  }
+  .comment-input {
+    display: flex;
+    margin-top: 20px;
   }
 }
 </style>

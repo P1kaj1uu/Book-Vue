@@ -107,7 +107,7 @@ export default {
       })
         .then(async () => {
           const req = {
-            bookId: row.bookId,
+            commentId: row.id,
           };
           const res = await deleteCommentAPI(req);
           if (res.code === 200) {

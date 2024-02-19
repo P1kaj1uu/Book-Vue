@@ -48,10 +48,10 @@ export const editCommentAPI = (data) => axios({
 })
 
 // 删除评论
-export const deleteCommentAPI = ({ bookId }) => axios({
+export const deleteCommentAPI = ({ commentId }) => axios({
   url: `/comment/delete`,
   method: 'DELETE',
   params: {
-    bookId
+    commentId
   }
 })
